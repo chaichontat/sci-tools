@@ -4,6 +4,11 @@
 
 # Changes to Primers
 
+- Read 1: 39 cycles
+- Index 1: 10 cycles
+- Index 2: 10 cycles
+- Read 2: remaining
+
 ### Common
 
 - Indices are chosen based on the Levenshtein distance, which includes deletions and insertions, unlike the Hamming distance. This is very helpful for demultiplexing the RT indices as the ligation indices are of variable length.
