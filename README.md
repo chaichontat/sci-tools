@@ -4,7 +4,7 @@
 
 # Changes to Primers
 
-- Read 1: 39 cycles
+- Read 1: 40 cycles
 - Index 1: 10 cycles
 - Index 2: 10 cycles
 - Read 2: remaining
