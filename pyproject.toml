@@ -1,0 +1,51 @@
+[tool.poetry]
+authors = [
+    "Chaichontat Sriworarat <34997334+chaichontat@users.noreply.github.com>",
+]
+description = ""
+license = "GPL v3.0"
+name = "scitools"
+packages = [{ include = "scitools" }]
+version = "0.0.1"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool.bandit]
+exclude = "tests"
+skips = ["B101", "B404", "B603", "B607"]
+targets = "scitools"
+
+[tool.black]
+line-length = 110
+target-version = ['py310']
+
+[tool.pyright]
+include = ["scitools"]
+pythonVersion = "3.10"
+reportMissingTypeStubs = false
+reportPrivateUsage = false
+reportPropertyTypeMismatch = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUntypedFunctionDecorator = false
+reportUnusedImport = false
+reportUnusedVariable = "warning"
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 120
+
+[tool.isort]
+line_length = 110
+profile = "black"
+py_version = 310
+src_paths = ["scitools"]
+
+[tool.pytest.ini_options]
+log_cli = 1
+# log_cli_level = "DEBUG"
+minversion = "7.0"
+testpaths = ["tests"]
