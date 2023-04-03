@@ -17,7 +17,6 @@ def plot_wheel(
     colorize_background: bool = True,
     **kwargs: Any,
 ) -> tuple[Figure, NamedTuple]:
-
     θ = np.arctan2(pcs[:, 0], pcs[:, 1])
     fig = fig or plt.figure(1, figsize=(6, 6))
     axs = NamedTuple("axs", scatter=Axes, histx=Axes, histy=Axes)(
@@ -29,17 +28,8 @@ def plot_wheel(
     H, xedges, yedges = np.histogram2d(pcs[:, 0], pcs[:, 1], bins=(100, 100))
     axs.scatter.axhline(0, color="black", alpha=0.5, markeredgewidth=0, linewidth=0.75)
     axs.scatter.axvline(0, color="black", alpha=0.5, markeredgewidth=0, linewidth=0.75)
-    sc = axs.scatter.scatter(
-        pcs[:, 0],
-        pcs[:, 1],
-        alpha=1,
-        s=5,
-        c=θ,
-        cmap=cmap,
-        zorder=2,
-        linewidth=0.2,
-        **kwargs
-    )
+    scatter_kw = dict(alpha=1, s=5, c=θ, cmap=cmap, zorder=2, linewidth=0.2) | kwargs
+    sc = axs.scatter.scatter(pcs[:, 0], pcs[:, 1], **scatter_kw)
     sc.set_edgecolor((0.4, 0.4, 0.4, 0.5))
     axs.scatter.set(xlabel="PC1", ylabel="PC2")
 

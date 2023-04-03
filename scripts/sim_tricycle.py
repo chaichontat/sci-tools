@@ -1,4 +1,4 @@
-#%%
+# %%
 from functools import cache
 
 import numpy as np
@@ -12,6 +12,7 @@ from scitools.tricycle.plot import plot_wheel
 from scitools.tricycle.simulation import simul_negbin
 
 sns.set()
+
 
 @cache
 def gen_simul(rand: RandomState, libsize: int, n_genes: int = 100) -> npt.NDArray[np.int_]:
