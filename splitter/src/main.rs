@@ -11,7 +11,7 @@ use std::simd::{u8x32, SimdPartialEq};
 use crate::simdstuffs::mismatch_count;
 use csv::ReaderBuilder;
 use lazy_static::lazy_static;
-use needletail::parse_fastx_file;
+use needletail::{parse_fastx_file, parse_fastx_stdin};
 
 const MAX_SUBSEQ_LEN: usize = 32;
 
@@ -71,7 +71,10 @@ fn main() {
     }
 
     let mut output = BufWriter::new(File::create(output_file).unwrap());
-    let mut reader = parse_fastx_file(fastq_file).expect("valid path/file");
+    let mut reader = match fastq_file.as_str() {
+        "-" => parse_fastx_stdin().expect("valid stdin"),
+        _ => parse_fastx_file(fastq_file).expect("valid path/file"),
+    };
     let mut count = 0;
     let mut unk = 0;
 
@@ -101,9 +104,6 @@ fn main() {
                 println!("Too many unknowns");
                 break;
             }
-        }
-        if count > 100000 {
-            break;
         }
     }
     output.flush().unwrap();
