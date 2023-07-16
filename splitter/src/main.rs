@@ -106,25 +106,25 @@ fn main() {
 fn encode_sequence(sequence: &[u8]) -> [u8; MAX_SUBSEQ_LEN] {
     let mut encoded = [0; MAX_SUBSEQ_LEN];
     for (i, &nucleotide) in sequence.iter().enumerate() {
-        encoded[i] |= encode_nucleotide(nucleotide);
+        encoded[i] |= nucleotide
     }
     encoded
 }
 
-fn encode_nucleotide(nucleotide: u8) -> u8 {
-    let x = match nucleotide.to_ascii_uppercase() {
-        b'A' => 0b00,
-        b'T' => 0b01,
-        b'C' => 0b10,
-        b'G' => 0b11,
-        b'N' => 0b100,
-        x => x,
-    };
-    if x == nucleotide {
-        println!("Unknown nucleotide: {}", nucleotide);
-    }
-    x
-}
+// fn encode_nucleotide(nucleotide: u8) -> u8 {
+//     let x = match nucleotide.to_ascii_uppercase() {
+//         b'A' => 0b00,
+//         b'T' => 0b01,
+//         b'C' => 0b10,
+//         b'G' => 0b11,
+//         b'N' => 0b100,
+//         x => x,
+//     };
+//     if x == nucleotide {
+//         println!("Unknown nucleotide: {}", nucleotide);
+//     }
+//     x
+// }
 
 fn is_one_mismatch_or_less(
     sub_seq: &[u8; MAX_SUBSEQ_LEN],
