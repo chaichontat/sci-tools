@@ -1,0 +1,15 @@
+channels:
+  - "conda-forge"
+dependencies:
+  - python=3.10
+  - click
+  - colorama
+  - openpyxl
+  - pandas
+  - pip
+  - seaborn
+  - pip:
+      - -e .
+      - hexhamming
+      - primer3-py
+      - python-Levenshtein
