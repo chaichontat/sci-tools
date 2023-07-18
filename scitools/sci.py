@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, TypeVar
 
 from Levenshtein import distance
 from nupack import Model, SetSpec, Strand, Tube, tube_analysis
@@ -30,24 +30,30 @@ def gen_set(
     max_gen: int = 800,
     min_dist: int = 4,
     gc_range: tuple[float, float] = (0.3, 0.6),
+    no_gg_start: bool = True,
+    no_four_gc: bool = True,
+    out: list[tuple[str, dict[str, Any]]] | None = None,
 ) -> list[tuple[str, dict[str, T]]]:
-    out = [
-        (
-            starter,
-            {name: f(starter)[0] for name, f in screens.items()},
-        )
-    ]
+    if out is None:
+        out = [
+            (
+                starter,
+                {name: f(starter)[0] for name, f in screens.items()},
+            )
+        ]
     for i, x in enumerate(samples):
-        if len(out) > max_gen:
+        if len(out) >= max_gen:
             break
 
         if i % 5000 == 0:
             print(i, len(out))
 
         seq = "".join(x)
-        if seq.endswith("CC"):
+        if no_gg_start and seq.endswith("CC"):
             continue
-        if "GGGG" in seq or "CCCC" in seq or "AAAA" in seq or "TTTT" in seq:
+        if no_four_gc and "GGGG" in seq or "CCCC" in seq:
+            continue
+        if "GGG" in seq or "CCC" in seq or "AAAA" in seq or "TTTT" in seq:
             continue
         if gc_content(seq) < gc_range[0] or gc_content(seq) > gc_range[1]:
             continue
