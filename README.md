@@ -14,7 +14,6 @@
 - Indices are chosen based on the Levenshtein distance, which includes deletions and insertions, unlike the Hamming distance (even though deletions are much rarer than substitutions in NovaSeq runs).
   - 4 mismatches minimum. 30-70% GC. Indices do not start with `GG`.
 
-
 ### RT
 
 - Switch to anchored dT28VN. [Reduces quantification error from internal priming](https://academic.oup.com/nargab/article/4/2/lqac035/6592171). dT28 to reduce oligo length and to increase proportion of full-length oligos.
