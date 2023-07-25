@@ -1,17 +1,19 @@
 #![feature(portable_simd)]
 #![feature(ascii_char)]
-pub mod simdstuffs;
-use clap::Parser;
 
-use std::env;
+pub mod io;
+pub mod simdstuffs;
+
+use clap::Parser;
+use io::ParquetReader;
+
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::simd::{u8x32, SimdPartialEq};
 
 use crate::simdstuffs::mismatch_count;
 use csv::ReaderBuilder;
 use lazy_static::lazy_static;
-use needletail::{parse_fastx_file, parse_fastx_stdin};
+use needletail::{parse_fastx_file, parse_fastx_stdin, FastxReader};
 
 const MAX_SUBSEQ_LEN: usize = 32;
 
@@ -28,17 +30,7 @@ struct Args {
     tol: Option<i8>,
 }
 
-fn main() {
-    let args = Args::parse();
-
-    let fastq_file = &args.fastq_file;
-    let tag_file = &args.tag_file;
-    let output_file = &args.output;
-    let tol = args.tol.unwrap_or(0);
-    if !(0..=32).contains(&tol) {
-        panic!("Tolerance must be between 0 and 32");
-    }
-
+fn parse_tag(tag_file: &str) -> (Vec<([u8; MAX_SUBSEQ_LEN], String)>, usize) {
     let mut tags = Vec::new();
     let mut r = ReaderBuilder::new()
         .delimiter(b'\t')
@@ -46,14 +38,13 @@ fn main() {
         .from_path(tag_file)
         .unwrap();
 
-    let start = args.index;
-    let mut end = 0;
+    let mut len = 0;
 
     for (i, result) in r.records().enumerate() {
         let record = result.unwrap();
         if i == 0 {
-            end = start + record.get(0).unwrap().len();
-        } else if record.get(0).unwrap().len() + start != end {
+            len = record.get(0).unwrap().len();
+        } else if record.get(0).unwrap().len() != len {
             panic!("All sequences must be same length");
         }
 
@@ -69,19 +60,53 @@ fn main() {
         let name = record.get(1).unwrap().to_string();
         tags.push((sequence, name));
     }
+    (tags, len)
+}
+
+struct FastxSequence {
+    reader: Box<dyn FastxReader>,
+}
+
+impl Iterator for FastxSequence {
+    type Item = Vec<u8>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let record = self.reader.next()?.expect("invalid record");
+        Some(record.raw_seq().to_vec())
+    }
+}
+
+fn main() {
+    let args = Args::parse();
+
+    let fastq_file = &args.fastq_file;
+    let tag_file = &args.tag_file;
+    let output_file = &args.output;
+    let tol = args.tol.unwrap_or(0);
+    if !(0..=32).contains(&tol) {
+        panic!("Tolerance must be between 0 and 32");
+    }
+    let (tags, len) = parse_tag(tag_file);
+    let start = args.index;
+    let end = start + len;
 
     let mut output = BufWriter::new(File::create(output_file).unwrap());
-    let mut reader = match fastq_file.as_str() {
-        "-" => parse_fastx_stdin().expect("valid stdin"),
-        _ => parse_fastx_file(fastq_file).expect("valid path/file"),
+    let mut reader: Box<dyn Iterator<Item = Vec<u8>>> = match fastq_file.as_str() {
+        "-" => Box::new(FastxSequence {
+            reader: parse_fastx_stdin().expect("valid stdin"),
+        }),
+        x if x.ends_with(".fastq") => Box::new(FastxSequence {
+            reader: parse_fastx_file(fastq_file).expect("valid path/file"),
+        }),
+        x if x.ends_with(".parquet") => Box::new(ParquetReader::new(fastq_file)),
+        _ => panic!("Invalid file type"),
     };
     let mut count = 0;
     let mut unk = 0;
 
-    while let Some(record) = reader.next() {
-        let seqrec = record.expect("invalid record");
+    while let Some(seq) = reader.next() {
         // println!("{:?}", str::from_utf8(seqrec.raw_seq()[start..end].as_ascii().unwrap().as_bytes()));
-        let sub_seq = encode_sequence(seqrec.raw_seq()[start..end].as_ascii().unwrap().as_bytes());
+        let sub_seq = encode_sequence(&seq[start..end]);
         'found: {
             for (sequence, name) in &tags {
                 if mismatch_count(&sub_seq, sequence, tol) {
@@ -111,9 +136,7 @@ fn main() {
 
 fn encode_sequence(sequence: &[u8]) -> [u8; MAX_SUBSEQ_LEN] {
     let mut encoded = [0; MAX_SUBSEQ_LEN];
-    for (i, &nucleotide) in sequence.iter().enumerate() {
-        encoded[i] = nucleotide
-    }
+    encoded[0..sequence.len()].clone_from_slice(sequence);
     encoded
 }
 
