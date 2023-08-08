@@ -41,6 +41,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+
     steps:
       - uses: actions/checkout@v3
 
@@ -51,5 +52,6 @@ jobs:
           # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.
           # Note that glob pattern is not supported yet.
           bin: scitools
+          manifest_path: "splitter/Cargo.toml"
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
