@@ -2,7 +2,7 @@ use needletail::{parse_fastx_file, parse_fastx_stdin};
 use parquet::{
     basic::Compression::ZSTD,
     basic::ZstdLevel,
-    basic::{ConvertedType, Repetition, Type as PhysicalType},
+    basic::{Repetition, Type as PhysicalType},
     data_type::{ByteArrayType, FixedLenByteArray, FixedLenByteArrayType},
     file::{
         properties::WriterProperties,

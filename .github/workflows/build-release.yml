@@ -1,0 +1,55 @@
+name: Build and Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            flags: '-C target-feature=+v7,+neon'
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            flags: '-C target-feature=+avx,+avx2,+fma,+bmi1,+bmi2'
+
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            flags: '-C target-feature=+v8,+neon'
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            flags: '-C target-feature=+avx,+avx2,+fma,+bmi1,+bmi2'
+
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            flags: '-C target-feature=+avx,+avx2,+fma,+bmi1,+bmi2'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: taiki-e/upload-rust-binary-action@v1
+        env:
+            RUSTFLAGS: ${{ matrix.flags }}
+        with:
+          # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.
+          # Note that glob pattern is not supported yet.
+          bin: scitools
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -12,20 +12,24 @@ use std::io::{BufWriter, Write};
 
 use crate::simdstuffs::mismatch_count;
 use csv::ReaderBuilder;
-use lazy_static::lazy_static;
 use needletail::{parse_fastx_file, parse_fastx_stdin, FastxReader};
 
 const MAX_SUBSEQ_LEN: usize = 32;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = "Read demuxer for sci-rna-seq3.")]
 struct Args {
+    /// Path to read 1 FASTQ file
     fastq_file: String,
+    /// Path to tag file (TSV format)
     tag_file: String,
+    /// Output path
     #[arg(short, long)]
     output: String,
+    /// Index in read 1 to start matching (default=0)
     #[arg(short, long)]
     index: usize,
+    /// Mismatch tolerance (default=1)
     #[arg(short, long)]
     tol: Option<i8>,
 }
