@@ -27,7 +27,7 @@ existing = lig.filter(pl.col("col").apply(lambda x: np.bitwise_and(x, 1)) != 0).
     idx=pl.col("seq").str.slice(7, 10)
 )
 
-dump = existing = lig.filter(pl.col("col").apply(lambda x: np.bitwise_and(x, 1)) == 0).with_columns(
+dump = lig.filter(pl.col("col").apply(lambda x: np.bitwise_and(x, 1)) == 0).with_columns(
     idx=pl.col("seq").str.slice(7, 10)
 )
 
