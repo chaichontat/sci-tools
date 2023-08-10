@@ -12,6 +12,12 @@ def reverse_complement(seq: str) -> str:
     return seq[::-1].translate(_revtrans)
 
 
+def wells_iter(rows: str = "ABCDEFGH", cols: range = range(1, 13)):
+    for r in rows:
+        for c in cols:
+            yield f"{r}{c:02d}"
+
+
 def calculate_base_diversity(seq: list[str]) -> list[dict[str, float]]:
     length = len(seq[0])
     if not all(len(x) == length for x in seq):

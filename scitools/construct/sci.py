@@ -1,9 +1,11 @@
+import random
 from typing import Any, Callable, Iterable, TypeVar
 
 from Levenshtein import distance
 from nupack import Model, SetSpec, Strand, Tube, tube_analysis
 
-from scitools.bases import gc_content
+from scitools.bases import gc_content, gen_sample_space
+from scitools.utils import repeat
 
 try:
     profile
@@ -22,7 +24,7 @@ T = TypeVar("T")
 
 
 @profile
-def gen_set(
+def generate_index_set(
     samples: Iterable[str],
     starter: str,
     *,
@@ -69,3 +71,13 @@ def gen_set(
             else:
                 out.append((seq, res))
     return out
+
+
+def generate_n(seed: int, k: int = 10, screens: dict[str, Callable[[str], tuple[Any, bool]]] = {}, **kwargs):
+    base = gen_sample_space(repeat("N", k))
+    random.seed(seed)
+    random.shuffle(base)
+    return [
+        x[0]
+        for x in generate_index_set(base, "".join(random.choices("ATGC", k=k)), screens=screens, **kwargs)
+    ]
