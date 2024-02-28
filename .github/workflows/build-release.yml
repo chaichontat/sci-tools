@@ -5,8 +5,6 @@ permissions:
 
 on:
   push:
-    tags:
-      - "*"
 
 jobs:
   create-release:
@@ -28,7 +26,7 @@ jobs:
             os: ubuntu-latest
             flags: "-C target-feature=+avx,+avx2,+fma,+bmi1,+bmi2"
           - target: aarch64-apple-darwin
-            os: macos-latest
+            os: macos-14
             flags: "-C target-cpu=apple-m1"
           - target: x86_64-apple-darwin
             os: macos-latest
@@ -41,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@nightly
 
@@ -51,7 +49,7 @@ jobs:
         with:
           # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.
           # Note that glob pattern is not supported yet.
-          bin: scitools,remap
+          bin: splitter,remap
           manifest_path: "splitter/Cargo.toml"
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
