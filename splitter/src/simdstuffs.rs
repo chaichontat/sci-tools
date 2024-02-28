@@ -1,4 +1,4 @@
-use std::simd::{u8x32, SimdPartialEq};
+use std::simd::prelude::{u8x32, SimdPartialEq};
 
 #[inline]
 fn core_comp(sub_seq: &[u8; 32], sequence: &[u8; 32]) -> [i8; 32] {
