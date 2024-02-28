@@ -43,6 +43,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@nightly
 
+      - name: Get short SHA
+        id: short_sha
+        run: echo "::set-output name=sha::$(echo ${GITHUB_SHA::8})"
+
       - uses: taiki-e/upload-rust-binary-action@v1
         env:
           RUSTFLAGS: ${{ matrix.flags }}
@@ -53,3 +57,4 @@ jobs:
           manifest_path: "splitter/Cargo.toml"
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ steps.short_sha.outputs.sha }}
