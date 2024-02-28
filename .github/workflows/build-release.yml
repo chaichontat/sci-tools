@@ -5,6 +5,8 @@ permissions:
 
 on:
   push:
+    tags:
+      - "*"
 
 jobs:
   create-release:
@@ -57,4 +59,3 @@ jobs:
           manifest_path: "splitter/Cargo.toml"
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: refs/tags/${{ steps.short_sha.outputs.sha }}
