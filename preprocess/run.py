@@ -4,25 +4,11 @@ import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
 from typing import Literal
 
 import click
 from loguru import logger
-
-RUST_PATH = Path("/home/chaichontat/rawSeq/")
-if not (RUST_PATH / "splitter").exists() and (RUST_PATH / "remap").exists():
-    raise RuntimeError
-
-INDEX_PATH = Path("/home/chaichontat/working/mousenuc/")
-kfiles = {
-    k: INDEX_PATH / v
-    for k, v in dict(
-        i="index.idx", g="t2g.txt", c1="cdna.txt", c2="nascent.txt"
-    ).items()
-}
-assert all(v.exists() for v in kfiles.values())
 
 
 @dataclass
@@ -33,48 +19,39 @@ class Param:
     tol: int
 
 
-def check_done(f):
-    @wraps(f)
-    def inner(path: Path):
-        if path.exists():
-            return
-        f(path)
-        path.touch()
-
-    return inner
-
-
 @click.command()
-@click.argument(
-    "i1", type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path)
-)
+@click.argument("i1", type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path))
 @click.option(
     "--idxs",
     type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
     default=Path.cwd(),
+    description="Path to barcode files.",
 )
-@click.option("--rt", type=int, default=1)
-@click.option("--lig", type=int, default=1)
-@click.option("--nokallisto", is_flag=True)
-def run(i1: Path, idxs: Path, rt: int = 1, lig: int = 1, nokallisto: bool = False):
+@click.option(
+    "--rustpath",
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, path_type=Path),
+    description="Path to rust executables.",
+)
+def run(i1: Path, idxs: Path, rustpath: Path):
     PARAMS = {
-        "rt": Param("finalRT.tsv", "R1", 23, rt),
+        "rt": Param("finalRT.tsv", "R1", 23, 1),
         "p5": Param("finalP5.tsv", "I2", 0, 1),
         "p7": Param("finalP7.tsv", "I1", 0, 1),
-        "lig": Param("finalLig.tsv", "R1", 0, lig),
+        "lig": Param("finalLig.tsv", "R1", 0, 1),
     }
     path = i1.parent
-    lane = re.search(r"Undetermined_S0_(L[0-9]+).*", i1.name).group(1)
+    lane = re.search(r"(L[0-9]+)", i1.name).group(1)
+
+    if not (rustpath / "splitter").exists() and (rustpath / "remap").exists():
+        raise FileNotFoundError("Rust executables not found. Please download from github.com/chaichontat/")
 
     done_files = [
         path / f"{lane}_1idxpcr.DONE",
         path / f"{lane}_2remap.DONE",
         path / f"{lane}_3rt.DONE",
         path / f"{lane}_4fakeidx.DONE",
-        path / f"{lane}_5kallisto.DONE",
     ]
 
-    # with check_done(path / f"{lane}_1idxpcr.DONE"):
     if not (done_files[0]).exists():
         with ThreadPoolExecutor() as exc:
             for k, v in PARAMS.items():
@@ -83,7 +60,7 @@ def run(i1: Path, idxs: Path, rt: int = 1, lig: int = 1, nokallisto: bool = Fals
                 name = re.sub(r"(I1|I2|R1|R2)", v.read, i1.name)
                 exc.submit(
                     subprocess.run,
-                    f"pigz -dc {path/name} | {RUST_PATH}splitter - {idxs.resolve()}/{v.file} --index {v.index} --tol {v.tol} | pigz > {path}/{lane}_{k}.tsv.gz",
+                    f"pigz -dc {path/name} | {rustpath/'splitter'} - {idxs.resolve()}/{v.file} --index {v.index} --tol {v.tol} | pigz > {path}/{lane}_{k}.tsv.gz",
                     shell=True,
                 )
         done_files[0].touch()
@@ -94,7 +71,7 @@ def run(i1: Path, idxs: Path, rt: int = 1, lig: int = 1, nokallisto: bool = Fals
     if not (done_files[1]).exists():
         logger.info(f"Remapping. Reading from {lane}_lig.tsv.gz.")
         subprocess.run(
-            f"pigz -dc {path}/{lane}_lig.tsv.gz| {RUST_PATH}remap {idxs}/shortlong.tsv | pigz > {path}/{lane}_ligmode.tsv.gz",
+            f"pigz -dc {path}/{lane}_lig.tsv.gz | {rustpath/'remap'} {idxs}/shortlong.tsv | pigz > {path}/{lane}_ligmode.tsv.gz",
             shell=True,
             env=os.environ,
             check=True,
@@ -102,9 +79,15 @@ def run(i1: Path, idxs: Path, rt: int = 1, lig: int = 1, nokallisto: bool = Fals
         done_files[1].touch()
 
     if not (done_files[2]).exists():
+        shell = os.environ.get("SHELL", "/bin/sh")
+        if shell.endswith("fish"):
+            substitution = f"(pigz -dc {path}/{lane}_ligmode.tsv.gz | psub)"
+        else:
+            substitution = f"<(pigz -dc {path}/{lane}_ligmode.tsv.gz)"
+
         subprocess.run(
-            f'fish -c "conda activate seq && pigz -dc {path/name} | {RUST_PATH}splitter - {idxs.resolve()}/{v.file} --index {v.index} --tol {v.tol}'
-            f' -s (pigz -dc {path}/{lane}_ligmode.tsv.gz | psub) | pigz > {path}/{lane}_rt.tsv.gz"',
+            f'{shell} -c "pigz -dc {path/name} | {rustpath/"splitter"} - {idxs.resolve()}/{v.file} --index {v.index} --tol {v.tol}'
+            f' -s {substitution} | pigz > {path}/{lane}_rt.tsv.gz"',
             shell=True,
             env=os.environ,
             check=True,
@@ -118,18 +101,6 @@ def run(i1: Path, idxs: Path, rt: int = 1, lig: int = 1, nokallisto: bool = Fals
             check=True,
         )
         done_files[3].touch()
-
-    if not (done_files[4]).exists() and not nokallisto:
-        indices = " ".join([f"-{k} {v}" for k, v in kfiles.items()])
-
-        subprocess.run(
-            f'kb count --h5ad -x \'0,0,28:0,28,37:1,0,0\' -t 16 --workflow nac --strand forward'
-            f' {indices}'
-            f' {path}/{lane}_combi.fastq.gz {path/re.sub(r"(I1|I2|R1|R2)", "R2", i1.name)} -o {path/lane} --overwrite --verbose'
-            f' -w {idxs}/whitelist.txt',
-            shell=True,
-            check=True,
-        )
 
 
 if __name__ == "__main__":

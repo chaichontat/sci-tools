@@ -10,16 +10,13 @@ import pyfastx
 
 
 def extract_idx(file: Path, length_limit: int):
-    df = pl.read_csv(
-        file, has_header=False, new_columns=["idx", "well"], separator="\t"
-    )
+    df = pl.read_csv(file, has_header=False, new_columns=["idx", "well"], separator="\t")
     return dict(zip(df["well"], df["idx"].str.slice(0, length=length_limit)))
 
 
 LENGTH_LIMIT = {"p5": 6, "p7": 6, "lig": 8, "rt": 8}
 
 
-# %%
 @click.command()
 @click.argument("input", type=click.Path(exists=True))
 @click.option(
@@ -39,10 +36,12 @@ def run(input: str, lane: int, idxs: Path = Path.cwd()):
 
     Is = "I" * 28
     Ns = "N" * 28
-    fs = zip(*[
-        gzip.open(Path(input).parent / f"L{lane:03d}_{name}.tsv.gz", "rt")
-        for name in ["rt", "lig", "p7", "p5"]
-    ])
+    fs = zip(
+        *[
+            gzip.open(Path(input).parent / f"L{lane:03d}_{name}.tsv.gz", "rt")
+            for name in ["rt", "lig", "p7", "p5"]
+        ]
+    )
 
     for i, ((name, seq, qual), (_rt, _lig, _P7, _P5)) in enumerate(
         zip(
@@ -75,20 +74,20 @@ if __name__ == "__main__":
 # %%
 
 
-def gen_whitelist(idxs: Path, output: Path):
-    p5, p7, lig, rt = [
-        extract_idx(idxs / name, lim).values()
-        for name, lim in zip(
-            ["finalP5.tsv", "finalP7.tsv", "finalLig.tsv", "finalRT.tsv"],
-            [8, 8, 6, 6],
-        )
-    ]
-    p7p5 = [x + y for x, y in zip(p7, p5)]
-    whitelist = ["".join(combi) for combi in product(rt, lig, p7p5)]
-    with open(output, "w") as f:
-        f.write("\n".join(whitelist))
+# def gen_allowlist(idxs: Path, output: Path):
+#     p5, p7, lig, rt = [
+#         extract_idx(idxs / name, lim).values()
+#         for name, lim in zip(
+#             ["finalP5.tsv", "finalP7.tsv", "finalLig.tsv", "finalRT.tsv"],
+#             [8, 8, 6, 6],
+#         )
+#     ]
+#     p7p5 = [x + y for x, y in zip(p7, p5)]
+#     allowlist = ["".join(combi) for combi in product(rt, lig, p7p5)]
+#     with open(output, "w") as f:
+#         f.write("\n".join(allowlist))
 
 
-# %%
-# gen_whitelist(Path("/fast/2024"), Path("/fast/2024/whitelist.txt"))
-# %%
+# # %%
+# # gen_whitelist(Path("/fast/2024"), Path("/fast/2024/whitelist.txt"))
+# # %%
