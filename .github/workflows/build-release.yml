@@ -59,3 +59,4 @@ jobs:
           manifest_path: "splitter/Cargo.toml"
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          archive: $target
