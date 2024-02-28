@@ -8,9 +8,12 @@ version = "0.1.0"
 [dependencies]
 clap = {version = "4.3.12", features = ["derive"]}
 csv = "1.2.2"
+flate2 = "1.0.28"
+itertools = "0.12.1"
 lazy_static = "1.4.0"
 needletail = "0.5.1"
 parquet = "45.0.0"
+twox-hash = "1.6.3"
 
 [dev-dependencies]
 criterion = {version = "0.5.1", features = ["html_reports"]}
@@ -23,9 +26,13 @@ harness = false
 name = "benchmark"
 
 [[bin]]
-name = "scitools"
+name = "splitter"
 path = "src/main.rs"
 
 [[bin]]
 name = "converter"
 path = "src/convert.rs"
+
+[[bin]]
+name = "remap"
+path = "src/remap.rs"
